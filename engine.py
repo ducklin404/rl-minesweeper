@@ -10,82 +10,103 @@ HIDDEN = -2
 # one will be the current state of board user can see
 # one will be the flag, which will count mine when user place a flag
 
-def new_game(rows, cols, mines):
-    board = np.zeros((rows, cols)).astype(int)
-    idx = np.random.choice(rows * cols, size=mines, replace=False)
-    board.flat[idx] = MINE
+class MineSweeper:
+    def __init__(self, detail):
+        self.rows = detail[0]
+        self.cols = detail[1]
+        self.mines = detail[2]
+        self.board = np.full((self.rows, self.cols), HIDDEN)
+        self.solved_board = self.board.copy()
+        self.flag_board = self.board.copy()
+        self.exploded = set()
+        self.win = False
 
-    mines = (board == MINE).astype(int)
-    p = np.pad(mines, 1)
+    def reset(self):
+        self.win = False
+        temp_board = np.zeros((self.rows, self.cols)).astype(int)
+        idx = np.random.choice(self.rows * self.cols, size=self.mines, replace=False)
+        temp_board.flat[idx] = MINE
 
-
-    h, w = mines.shape
-    counts = sum(p[dy: dy+h, dx: dx+w]
-                 for dy in (0, 1, 2) for dx in (0, 1, 2)
-                 if (dx, dy) != (1, 1))
-
-
-    solved_board = np.where(mines == 1, MINE, counts)
-    return np.full((rows, cols), HIDDEN), solved_board, np.zeros((rows, cols)).astype(int)
-
-def flag(board, flag_board, x, y):
-    if board[y, x] == HIDDEN:
-        board[y, x] = FLAGGED
-
-        h, w = board.shape
-        y0, y1 = max(y - 1, 0), min(y + 2, h)
-        x0, x1 = max(x - 1, 0), min(x + 2, w)
-        flag_board[y0:y1, x0:x1] += 1
-        flag_board[y, x] -= 1
-
-    elif board[y, x] == FLAGGED:
-        board[y, x] = HIDDEN
-
-        h, w = board.shape
-        y0, y1 = max(y - 1, 0), min(y + 2, h)
-        x0, x1 = max(x - 1, 0), min(x + 2, w)
-        flag_board[y0:y1, x0:x1] -= 1
-        flag_board[y, x] += 1
+        mines = (temp_board == MINE).astype(int)
+        p = np.pad(mines, 1)
 
 
+        h, w = mines.shape
+        counts = sum(p[dy: dy+h, dx: dx+w]
+                    for dy in (0, 1, 2) for dx in (0, 1, 2)
+                    if (dx, dy) != (1, 1))
 
-def open(board, solved_board, flag_board, x, y, chording = False):
-    h, w = board.shape
-    if x < 0 or y < 0 or x >= w or y >= h:
+        self.board = np.full((self.rows, self.cols), HIDDEN)
+        self.solved_board = np.where(mines == 1, MINE, counts)
+        self.flag_board = np.zeros((self.rows, self.cols)).astype(int)
+        self.exploded = set()
+        
+        
+    def flag(self, x, y):
+        if self.board[y, x] == HIDDEN:
+            self.board[y, x] = FLAGGED
+
+            h, w = self.board.shape
+            y0, y1 = max(y - 1, 0), min(y + 2, h)
+            x0, x1 = max(x - 1, 0), min(x + 2, w)
+            self.flag_board[y0:y1, x0:x1] += 1
+            self.flag_board[y, x] -= 1
+            return 1
+
+        elif self.board[y, x] == FLAGGED:
+            self.board[y, x] = HIDDEN
+
+            h, w = self.board.shape
+            y0, y1 = max(y - 1, 0), min(y + 2, h)
+            x0, x1 = max(x - 1, 0), min(x + 2, w)
+            self.flag_board[y0:y1, x0:x1] -= 1
+            self.flag_board[y, x] += 1
+            return -1
+        
+        return 0
+
+
+
+    def open(self, x, y, chording = False):
+        h, w = self.board.shape
+        if x < 0 or y < 0 or x >= w or y >= h:
+            return True
+        if self.board[y, x] != HIDDEN:
+            if self.board[y, x] == FLAGGED:
+                pass
+            elif self.board[y, x] != HIDDEN and self.flag_board[y, x] == self.solved_board[y, x] and chording:
+                safe = True
+                for i in range(max(y - 1, 0), min(y + 2, h)):
+                    for j in range(max(x - 1, 0), min(x + 2, w)):
+                        if not self.open(j, i):
+                            safe = False
+
+                return safe
+
+        elif self.solved_board[y, x] == MINE:
+            self.exploded.add((y, x))
+            return False
+        else:
+            stack = [(y, x)]
+            while stack:
+                cy, cx = stack.pop()
+                if self.board[cy, cx] != HIDDEN: continue
+                self.board[cy, cx] = self.solved_board[cy, cx]
+                if self.solved_board[cy, cx] == 0:
+                    for i in range(max(cy - 1, 0), min(cy + 2, h)):
+                        for j in range(max(cx - 1, 0), min(cx + 2, w)):
+                            if (i, j) != (cy, cx):
+                                stack.append((i, j))
+                                
+        # win when the only unopened cells (hidden or flagged) left are the mines
+        if np.count_nonzero(self.board < 0) == self.mines: self.win = True
         return True
-    if board[y, x] != HIDDEN:
-        if board[y, x] == FLAGGED:
-            pass
-        elif flag_board[y, x] == solved_board[y, x] and chording:
-            safe = True
-            for i in range(max(y - 1, 0), min(y + 2, h)):
-                for j in range(max(x - 1, 0), min(x + 2, w)):
-                    if not open(board, solved_board, flag_board, j, i):
-                        safe = False
-
-            return safe
-
-    elif solved_board[y, x] == MINE:
-        return False
-    else:
-        stack = [(y, x)]
-        while stack:
-            cy, cx = stack.pop()
-            if board[cy, cx] != HIDDEN: continue
-            board[cy, cx] = solved_board[cy, cx]
-            if solved_board[cy, cx] == 0:
-                for i in range(max(cy - 1, 0), min(cy + 2, h)):
-                    for j in range(max(cx - 1, 0), min(cx + 2, w)):
-                        if (i, j) != (cy, cx):
-                            stack.append((i, j))
-
-    return True
 
 
 if __name__ == "__main__":
-    board, solved_board, flag_board = new_game(3, 4, 4)
-    print(board)
-    print(solved_board)
-    flag(board, flag_board, 1, 1)
-    print(board)
-    print(flag_board)
+    game = MineSweeper([16, 30, 99])
+    
+    game.reset()
+    print(game.board)
+    print(game.solved_board)
+    print(game.flag_board)
