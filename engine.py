@@ -12,6 +12,7 @@ HIDDEN = -2
 
 class MineSweeper:
     def __init__(self, detail):
+        self.rng = np.random.default_rng()
         self.rows = detail[0]
         self.cols = detail[1]
         self.mines = detail[2]
@@ -20,11 +21,13 @@ class MineSweeper:
         self.flag_board = self.board.copy()
         self.exploded = set()
         self.win = False
+        self.hidden = 0
 
     def reset(self):
         self.win = False
+        self.hidden = self.rows * self.cols
         temp_board = np.zeros((self.rows, self.cols)).astype(int)
-        idx = np.random.choice(self.rows * self.cols, size=self.mines, replace=False)
+        idx = self.rng.choice(self.rows * self.cols, size=self.mines, replace=False)
         temp_board.flat[idx] = MINE
 
         mines = (temp_board == MINE).astype(int)
@@ -92,6 +95,7 @@ class MineSweeper:
                 cy, cx = stack.pop()
                 if self.board[cy, cx] != HIDDEN: continue
                 self.board[cy, cx] = self.solved_board[cy, cx]
+                self.hidden -= 1
                 if self.solved_board[cy, cx] == 0:
                     for i in range(max(cy - 1, 0), min(cy + 2, h)):
                         for j in range(max(cx - 1, 0), min(cx + 2, w)):
@@ -99,7 +103,7 @@ class MineSweeper:
                                 stack.append((i, j))
                                 
         # win when the only unopened cells (hidden or flagged) left are the mines
-        if np.count_nonzero(self.board < 0) == self.mines: self.win = True
+        if self.hidden == self.mines: self.win = True
         return True
 
 

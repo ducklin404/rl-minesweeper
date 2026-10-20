@@ -1,12 +1,8 @@
 import numpy as np
 import pygame
 from engine import MineSweeper, MINE, HIDDEN, FLAGGED
+from config import *
 
-BEGINNER = [9, 9, 10]
-INTERMEDIATE = [16, 16, 40]
-EXPERT = [16, 30, 99]
-
-LEVEL = EXPERT
 
 
 rows, cols, mines = LEVEL
@@ -149,12 +145,6 @@ while running:
                     if not result:
                         isplaying = False
                         game_over = True
-                    elif mineGame.win:
-                        isplaying = False
-                        # auto-flag the remaining mines
-                        for r, c in zip(*np.where(mineGame.board == HIDDEN)):
-                            mineGame.flag(c, r)
-                        mine_left = 0
                 # right click flags immediately on press
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                     mine_left += mineGame.flag(col, row)
@@ -170,11 +160,8 @@ while running:
     draw_board(screen, mineGame, game_over)
     draw_header(screen, mine_left, elapsed)
     
-    if game_over or mineGame.win:
-        if game_over:
-            img = big_font.render("GAME OVER", True, (200, 0, 0))
-        else:
-            img = big_font.render("YOU WIN!", True, (0, 160, 0))
+    if game_over:
+        img = big_font.render("GAME OVER", True, (200, 0, 0))
         box = img.get_rect(center=screen.get_rect().center)
         pygame.draw.rect(screen, (255, 255, 255), box.inflate(30, 20), border_radius=8)
         pygame.draw.rect(screen, (0, 0, 0), box.inflate(30, 20), 2, border_radius=8)
