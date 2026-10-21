@@ -3,3 +3,4 @@ pygame
 gymnasium
 stable-baselines3
 torch
+sb3-contrib
