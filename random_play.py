@@ -134,6 +134,13 @@ while running:
         if not result:
             isplaying = False
             game_over = True
+            
+        elif mineGame.win:
+            isplaying = False
+            # auto-flag the remaining mines
+            for r, c in zip(*np.where(mineGame.board == HIDDEN)):
+                mineGame.flag(c, r)
+            mine_left = 0
 
     if isplaying:
         if start_ticks == None:
