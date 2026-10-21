@@ -37,6 +37,7 @@ class MineEnv(gym.Env):
     
     def step(self, action):
         hidden_before = self.game.hidden
+        info = {}
     
         n = rows*cols
         kind, cell = divmod(int(action), n)
@@ -62,7 +63,10 @@ class MineEnv(gym.Env):
         self.steps += 1
         truncated = self.steps >= self.max_steps
         
-        return self._obs(), reward, terminated, truncated, {}
+        if terminated or truncated:
+            info["is_success"] = self.game.win
+        
+        return self._obs(), reward, terminated, truncated, info
 
 
     def _obs(self):
