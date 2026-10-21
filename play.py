@@ -91,11 +91,12 @@ def draw_flag(screen, rect):
         (x + s * 0.2, y + s * 0.35),
     ])
 
-def draw_header(screen, mines_left, seconds):
+def draw_header(screen, mines_left, seconds, won=False, lost=False):
     # reset button
     pygame.draw.rect(screen, (200, 200, 0), reset_rect, border_radius=8)
     pygame.draw.rect(screen, (0, 0, 0), reset_rect, 2, border_radius=8)
-    face = font.render(":)", True, (0, 0, 0))
+    face_text = "B)" if won else ":(" if lost else ":)"
+    face = font.render(face_text, True, (0, 0, 0))
     screen.blit(face, face.get_rect(center=reset_rect.center))
 
     # mine counter 
@@ -145,6 +146,12 @@ while running:
                     if not result:
                         isplaying = False
                         game_over = True
+                    elif mineGame.win:
+                        isplaying = False
+                        # auto-flag the remaining mines
+                        for r, c in zip(*np.where(mineGame.board == HIDDEN)):
+                            mineGame.flag(c, r)
+                        mine_left = 0
                 # right click flags immediately on press
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
                     mine_left += mineGame.flag(col, row)
@@ -158,10 +165,13 @@ while running:
     
     screen.fill((192, 192, 192))
     draw_board(screen, mineGame, game_over)
-    draw_header(screen, mine_left, elapsed)
+    draw_header(screen, mine_left, elapsed, mineGame.win, game_over)
     
-    if game_over:
-        img = big_font.render("GAME OVER", True, (200, 0, 0))
+    if game_over or mineGame.win:
+        if game_over:
+            img = big_font.render("GAME OVER", True, (200, 0, 0))
+        else:
+            img = big_font.render("YOU WIN!", True, (0, 160, 0))
         box = img.get_rect(center=screen.get_rect().center)
         pygame.draw.rect(screen, (255, 255, 255), box.inflate(30, 20), border_radius=8)
         pygame.draw.rect(screen, (0, 0, 0), box.inflate(30, 20), 2, border_radius=8)
