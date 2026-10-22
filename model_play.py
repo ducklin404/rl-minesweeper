@@ -8,7 +8,7 @@ from minesweeper_env import MineEnv
 from featureCNN import FeatureCNN
 
 # usage: python model_play.py [path/to/model.zip]
-MODEL_PATH = sys.argv[1] if len(sys.argv) > 1 else "results/5m_run/cnn_v1/best/best_model.zip"
+MODEL_PATH = sys.argv[1] if len(sys.argv) > 1 else "results/20m_run_mlp/cnn_v1/best/best_model.zip"
 MOVE_DELAY = 300  # ms between agent moves
 DETERMINISTIC = True
 
