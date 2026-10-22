@@ -56,7 +56,8 @@ class MineEnv(gym.Env):
             reward, terminated = 0.0, False
         
         if opened:         
-            reward += opened*self.reward_per_open
+            # reward += opened*self.reward_per_open
+            reward += 0.12
         elif not terminated:
             reward -= 0.1
     

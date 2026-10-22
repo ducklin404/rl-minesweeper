@@ -7,7 +7,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 from minesweeper_env import MineEnv
-from featureCNN import FeatureCNN
+from minePolicy import MinePolicy, ConvTrunk
 from milestone_callback import MilestoneCallback
 
 
@@ -31,11 +31,11 @@ if __name__ == "__main__":
     train_env = make_vec_env(make_env, n_envs=N_ENVS, vec_env_cls=SubprocVecEnv)
     eval_env = DummyVecEnv([lambda: Monitor(make_env())])
 
-    stop = StopTrainingOnNoModelImprovement(
-        max_no_improvement_evals=10,
-        min_evals=10,
-        verbose=1,
-    )
+    # stop = StopTrainingOnNoModelImprovement(
+    #     max_no_improvement_evals=10,
+    #     min_evals=10,
+    #     verbose=1,
+    # )
 
     eval_cb = MaskableEvalCallback(
         eval_env,
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         n_eval_episodes=200,
         best_model_save_path=os.path.join(SAVE_DIR, "best"),
         log_path=os.path.join(SAVE_DIR, "eval_logs"),
-        callback_after_eval=stop,
+        # callback_after_eval=stop,
         verbose=1,
     )
 
@@ -61,18 +61,12 @@ if __name__ == "__main__":
     )
 
     policy_kwargs = {
-        "features_extractor_class": FeatureCNN,
-        "features_extractor_kwargs": {
-            "features_dim": 256
-        },
+        "features_extractor_class": ConvTrunk,
         "normalize_images": False
     }
 
-    model = MaskablePPO(policy="MlpPolicy",
+    model = MaskablePPO(policy=MinePolicy,
                         policy_kwargs=policy_kwargs,
-                        learning_rate=1e-4,
-                        target_kl=0.02,
-                        n_epochs=4,
                         env=train_env,
                         verbose=1,
                         batch_size=1024,
