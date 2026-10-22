@@ -42,7 +42,9 @@ class MineEnv(gym.Env):
         n = rows*cols
         kind, cell = divmod(int(action), n)
         r, c = divmod(cell, cols)
-        
+        # guess = no revealed neighbours before opening (first click excluded)
+        guess = self.steps != 0 and np.count_nonzero(self.game.board[max(r-1, 0):min(r+2, rows), max(c-1, 0):min(c+2, cols)] > -2) == 0
+
         if kind == 0:
             safe = self.game.open(c, r)
         else:
@@ -60,7 +62,10 @@ class MineEnv(gym.Env):
             reward += 0.12
         elif not terminated:
             reward -= 0.1
-    
+
+        if guess:
+            reward -= 0.3
+
         self.steps += 1
         truncated = self.steps >= self.max_steps
         
