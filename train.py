@@ -70,11 +70,16 @@ if __name__ == "__main__":
 
     model = MaskablePPO(policy="MlpPolicy",
                         policy_kwargs=policy_kwargs,
+                        learning_rate=1e-4,
+                        target_kl=0.02,
+                        n_epochs=4,
                         env=train_env,
                         verbose=1,
-                        batch_size=512,
+                        batch_size=1024,
                         gamma=0.95,
                         ent_coef=0.01)
     print(model.policy)
-    model.learn(total_timesteps=TOTAL_TIMESTEPS, callback=[eval_cb, checkpoint_cb, milestone_cb])
+    model.learn(total_timesteps=TOTAL_TIMESTEPS, 
+                callback=[eval_cb, checkpoint_cb, milestone_cb]
+                )
     model.save(os.path.join(SAVE_DIR, "final_model"))
