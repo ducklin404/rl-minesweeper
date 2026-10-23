@@ -9,7 +9,7 @@ rows, cols, mines = LEVEL
 
 
 class MineEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, safe_first = False):
         self.max_steps = rows * cols
         self.steps = 0
         self.reward_per_open = 1/(rows*cols-mines)
@@ -19,7 +19,7 @@ class MineEnv(gym.Env):
             shape=(11, rows, cols),
             dtype=np.float32
         )
-        self.game = MineSweeper(LEVEL)
+        self.game = MineSweeper(LEVEL, safe_first)
         
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)       

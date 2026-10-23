@@ -11,11 +11,13 @@ HIDDEN = -2
 # one will be the flag, which will count mine when user place a flag
 
 class MineSweeper:
-    def __init__(self, detail):
+    def __init__(self, detail, safe_first = False):
         self.rng = np.random.default_rng()
         self.rows = detail[0]
         self.cols = detail[1]
         self.mines = detail[2]
+        self.safe_first = safe_first
+        self.placed = False
         self.board = np.full((self.rows, self.cols), HIDDEN)
         self.solved_board = self.board.copy()
         self.flag_board = self.board.copy()
@@ -26,8 +28,25 @@ class MineSweeper:
     def reset(self):
         self.win = False
         self.hidden = self.rows * self.cols
+        self.board = np.full((self.rows, self.cols), HIDDEN)
+        self.solved_board = np.zeros((self.rows, self.cols)).astype(int)
+        self.flag_board = np.zeros((self.rows, self.cols)).astype(int)
+        self.exploded = set()
+        self.placed = False
+
+        # safe first click: wait for the first open() to place the mines
+        if not self.safe_first:
+            self.place_mines()
+
+
+    def place_mines(self, x = None, y = None):
+        # keep the first clicked cell and its neighbours free of mines
+        allowed = np.ones((self.rows, self.cols), dtype=bool)
+        if x is not None:
+            allowed[max(y - 1, 0):y + 2, max(x - 1, 0):x + 2] = False
+
         temp_board = np.zeros((self.rows, self.cols)).astype(int)
-        idx = self.rng.choice(self.rows * self.cols, size=self.mines, replace=False)
+        idx = self.rng.choice(np.flatnonzero(allowed), size=self.mines, replace=False)
         temp_board.flat[idx] = MINE
 
         mines = (temp_board == MINE).astype(int)
@@ -39,11 +58,9 @@ class MineSweeper:
                     for dy in (0, 1, 2) for dx in (0, 1, 2)
                     if (dx, dy) != (1, 1))
 
-        self.board = np.full((self.rows, self.cols), HIDDEN)
         self.solved_board = np.where(mines == 1, MINE, counts)
-        self.flag_board = np.zeros((self.rows, self.cols)).astype(int)
-        self.exploded = set()
-        
+        self.placed = True
+
         
     def flag(self, x, y):
         if self.board[y, x] == HIDDEN:
@@ -74,6 +91,8 @@ class MineSweeper:
         h, w = self.board.shape
         if x < 0 or y < 0 or x >= w or y >= h:
             return True
+        if not self.placed:
+            self.place_mines(x, y)
         if self.board[y, x] != HIDDEN:
             if self.board[y, x] == FLAGGED:
                 pass

@@ -21,7 +21,7 @@ SAVE_DIR = os.path.join(BASE_DIR, RUN)
 
 
 def make_env():
-    env = MineEnv()
+    env = MineEnv(safe_first=True)
     env = ActionMasker(env, lambda env: env.action_masks())
     return env
 

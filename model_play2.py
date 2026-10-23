@@ -8,8 +8,8 @@ from minesweeper_env import MineEnv
 from minePolicy import MinePolicy, ConvTrunk
 
 # usage: python model_play2.py [path/to/model.zip]
-MODEL_PATH = sys.argv[1] if len(sys.argv) > 1 else "results/first_fullconv/fullconv_v1/best/best_model.zip"
-MOVE_DELAY = 300  # ms between agent moves
+MODEL_PATH = "results/5m_tune_inter_1/fullconv_INTER_v1/best/best_model.zip"
+MOVE_DELAY = 120  # ms between agent moves
 DETERMINISTIC = True
 
 
@@ -44,17 +44,20 @@ big_font = pygame.font.SysFont("consolas", 48, bold=True)
 
 pygame.display.set_caption("minesweeper - model (fullconv)")
 
+env = MineEnv()
 
 model = MaskablePPO.load(MODEL_PATH, custom_objects={
     "lr_schedule": lambda _: 0.0,
     "clip_range": lambda _: 0.0,
+    "observation_space":env.observation_space,
+    "action_space":env.action_space,
     "policy_class": MinePolicy,
     "policy_kwargs": {
         "features_extractor_class": ConvTrunk,
         "normalize_images": False,
     },
 })
-env = MineEnv()
+
 obs, _ = env.reset()
 mineGame = env.game
 clock = pygame.time.Clock()
